@@ -196,8 +196,11 @@ class TestAdjointOperatorFourierTransform(unittest.TestCase):
                 # and N!=Nz
                 Nz = 16
                 _mask = np.random.randint(2, size=(N, N))
-                _mask3D = np.asarray([_mask for i in np.arange(Nz)])
-                _samples = convert_mask_to_locations(_mask3D.swapaxes(0, 2))
+
+                # Generate random mask along z
+                sampling_z = np.random.randint(2, size=self.N)
+                _mask3D = np.asarray([_mask*i for i in sampling_z])_samples = convert_mask_to_locations(_mask3D.swapaxes(0, 2))
+
                 print("Process Stack-3D similarity with NFFT for N=" + str(N))
                 fourier_op_stack = Stacked3DNFFT(kspace_loc=_samples,
                                                  shape=(N, N, Nz),
