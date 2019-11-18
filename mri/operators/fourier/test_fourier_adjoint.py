@@ -214,7 +214,7 @@ class TestAdjointOperatorFourierTransform(unittest.TestCase):
                                                   implementation='cpu',
                                                   n_coils=channel)
                 Img = np.random.random((channel, N, N, Nz)) + \
-                      1j * np.random.random((channel, N, N, Nz))
+                    1j * np.random.random((channel, N, N, Nz))
                 f = np.random.random((channel, _samples.shape[0])) + \
                     1j * np.random.random((channel, _samples.shape[0]))
                 start_time = time.time()

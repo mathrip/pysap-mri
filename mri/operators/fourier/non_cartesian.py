@@ -516,7 +516,7 @@ class Stacked3DNFFT(OperatorBase):
         inv_idx = np.zeros_like(self.sort_pos)
         inv_idx[self.sort_pos] = np.arange(len(self.sort_pos))
         return stacked_kspace_sampled[inv_idx] * \
-               np.sqrt(self.num_slices / self.acq_num_slices)
+            np.sqrt(self.num_slices / self.acq_num_slices)
 
     def op(self, data):
         """ This method calculates Fourier transform.
