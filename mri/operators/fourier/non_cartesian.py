@@ -482,8 +482,12 @@ class Stacked3DNFFT(OperatorBase):
         """
         self.num_slices = shape[2]
         self.shape = shape
-        (kspace_plane_loc, self.z_sample_loc,
-         self.sort_pos) = get_stacks_fourier(kspace_loc)
+        (kspace_plane_loc,
+         self.z_sample_loc,
+         self.sort_pos,
+         self.idx_mask_z) = get_stacks_fourier(
+            kspace_loc,
+            self.shape)
         self.acq_num_slices = len(self.z_sample_loc)
         self.stack_len = len(kspace_plane_loc)
         self.plane_fourier_operator = \
@@ -494,18 +498,23 @@ class Stacked3DNFFT(OperatorBase):
     def _op(self, data):
         fft_along_z_axis = np.fft.fftshift(np.fft.fft(
             np.fft.ifftshift(data, axes=2),
-            n=self.acq_num_slices,
             norm="ortho"),
             axes=2)
+
         stacked_kspace = np.asarray(
             [self.plane_fourier_operator.op(fft_along_z_axis[:, :, slice])
-             for slice in np.arange(self.acq_num_slices)])
-        stacked_kspace = np.reshape(stacked_kspace,
+             for slice in range(self.num_slices)])
+        stacked_kspace_sampled = np.zeros((self.acq_num_slices,
+                                           self.stack_len),
+                                          dtype=data.dtype)
+        stacked_kspace_sampled = stacked_kspace[self.idx_mask_z, :]
+
+        stacked_kspace_sampled = np.reshape(stacked_kspace_sampled,
                                     self.acq_num_slices * self.stack_len)
         # Unsort the Coefficients
         inv_idx = np.zeros_like(self.sort_pos)
         inv_idx[self.sort_pos] = np.arange(len(self.sort_pos))
-        return stacked_kspace[inv_idx]
+        return stacked_kspace_sampled[inv_idx]
 
     def op(self, data):
         """ This method calculates Fourier transform.
@@ -526,29 +535,26 @@ class Stacked3DNFFT(OperatorBase):
             coeff = [self._op(data[i])
                      for i in range(self.n_coils)]
         coeff = np.asarray(coeff)
+
         return coeff
 
     def _adj_op(self, coeff):
         coeff = coeff[self.sort_pos]
         stacks = np.reshape(coeff, (self.acq_num_slices, self.stack_len))
         # Receive First Fourier transformed data (per plane) in Nz x N x N
-        adj_fft_along_z_axis = \
-            np.asarray([self.plane_fourier_operator.adj_op(stacks[slice]).T
-                        for slice in np.arange(stacks.shape[0])])
-        # TODO fix for higher N, this is not a usecase
-        # interpolate_kspace = interp1d(self.z_samples[:, 0],
-        #                               adj_fft_along_z_axis, kind='zero',
-        #                               axis=0, bounds_error=False,
-        #                               fill_value=0)
-        # adj_fft_along_z_axis = interpolate_kspace(np.linspace(-0.5, 0.5,
-        #                                            self.num_slices,
-        #                                            endpoint=False))
+        adj_fft_along_z_axis = np.zeros((*self.plane_fourier_operator.shape,
+                                         self.num_slices),
+                                        dtype=coeff.dtype)
+        for idxs, idxm in enumerate(self.idx_mask_z):
+            adj_fft_along_z_axis[:, :, idxm] = \
+                self.plane_fourier_operator.adj_op(stacks[idxs])
+
         stacked_images = np.fft.ifftshift(np.fft.ifft(
-            np.asarray(np.fft.fftshift(adj_fft_along_z_axis, axes=0)),
-            axis=0, n=self.num_slices, norm="ortho"),
-            axes=0)
-        # Transpose the data to place in form of Nx x Ny x Nz
-        return stacked_images.T
+                np.asarray(np.fft.fftshift(adj_fft_along_z_axis, axes=-1)),
+                axis=-1, norm="ortho"),
+            axes=-1)
+
+        return stacked_images
 
     def adj_op(self, coeff):
         """ This method calculates inverse masked non-uniform Fourier
