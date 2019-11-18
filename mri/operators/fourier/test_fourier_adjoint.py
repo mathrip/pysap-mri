@@ -185,7 +185,7 @@ class TestAdjointOperatorFourierTransform(unittest.TestCase):
                 np.testing.assert_allclose(x_d, x_ad, rtol=1e-10)
         print("Stacked FFT in 3D adjoint test passes")
 
-    def test_similarity_stack_3D(self):
+    def test_similarity_stack_3D_nfft(self):
         """Test the similarity of stacked implementation of Fourier transform
         to that of NFFT
         """
@@ -198,8 +198,11 @@ class TestAdjointOperatorFourierTransform(unittest.TestCase):
                 _mask = np.random.randint(2, size=(N, N))
 
                 # Generate random mask along z
-                sampling_z = np.random.randint(2, size=self.N)
-                _mask3D = np.asarray([_mask*i for i in sampling_z])_samples = convert_mask_to_locations(_mask3D.swapaxes(0, 2))
+                sampling_z = np.random.randint(2, size=Nz)
+                _mask3D = np.zeros((N, N, Nz))
+                for idx, acq_z in enumerate(sampling_z):
+                    _mask3D[:, :, idx] = _mask * acq_z
+                _samples = convert_mask_to_locations(_mask3D)
 
                 print("Process Stack-3D similarity with NFFT for N=" + str(N))
                 fourier_op_stack = Stacked3DNFFT(kspace_loc=_samples,
@@ -211,7 +214,7 @@ class TestAdjointOperatorFourierTransform(unittest.TestCase):
                                                   implementation='cpu',
                                                   n_coils=channel)
                 Img = np.random.random((channel, N, N, Nz)) + \
-                    1j * np.random.random((channel, N, N, Nz))
+                      1j * np.random.random((channel, N, N, Nz))
                 f = np.random.random((channel, _samples.shape[0])) + \
                     1j * np.random.random((channel, _samples.shape[0]))
                 start_time = time.time()
@@ -225,7 +228,7 @@ class TestAdjointOperatorFourierTransform(unittest.TestCase):
                 np.testing.assert_allclose(stack_I_p, nfft_I_p, rtol=1e-9)
                 nfft_runtime = time.time() - start_time
                 print("For N=" + str(N) + " Speedup = " +
-                      str(nfft_runtime/stack_runtime))
+                      str(nfft_runtime / stack_runtime))
         print("Stacked FFT in 3D adjoint test passes")
 
     def test_stack_3D_error(self):

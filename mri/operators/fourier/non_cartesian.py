@@ -509,12 +509,14 @@ class Stacked3DNFFT(OperatorBase):
                                           dtype=data.dtype)
         stacked_kspace_sampled = stacked_kspace[self.idx_mask_z, :]
 
-        stacked_kspace_sampled = np.reshape(stacked_kspace_sampled,
-                                    self.acq_num_slices * self.stack_len)
+        stacked_kspace_sampled = np.reshape(
+            stacked_kspace_sampled,
+            self.acq_num_slices * self.stack_len)
         # Unsort the Coefficients
         inv_idx = np.zeros_like(self.sort_pos)
         inv_idx[self.sort_pos] = np.arange(len(self.sort_pos))
-        return stacked_kspace_sampled[inv_idx]
+        return stacked_kspace_sampled[inv_idx] * \
+               np.sqrt(self.num_slices / self.acq_num_slices)
 
     def op(self, data):
         """ This method calculates Fourier transform.
@@ -554,7 +556,7 @@ class Stacked3DNFFT(OperatorBase):
                 axis=-1, norm="ortho"),
             axes=-1)
 
-        return stacked_images
+        return stacked_images * np.sqrt(self.num_slices / self.acq_num_slices)
 
     def adj_op(self, coeff):
         """ This method calculates inverse masked non-uniform Fourier
