@@ -281,7 +281,7 @@ def get_stacks_fourier(kspace_loc, shape):
     sampled_stack_loc = np.unique(kspace_loc[:, 2])
 
     idx_mask_z = np.asarray([np.where(x == full_stack_loc)[0][0] for
-                                x in sampled_stack_loc])
+                             x in sampled_stack_loc])
 
     first_stack_len = np.size(np.where(kspace_loc[:, 2] ==
                                        np.min(kspace_loc[:, 2])))

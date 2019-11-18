@@ -17,7 +17,8 @@ We use the toy datasets available in pysap, more specifically a 3D Orange.
 from mri.operators import Stacked3DNFFT
 from mri.optimizers import fista
 from mri.reconstruct.utils import generate_operators
-from mri.operators.utils import convert_locations_to_mask, get_stacks_fourier
+from mri.operators.utils import convert_locations_to_mask, get_stacks_fourier,\
+    convert_mask_to_locations
 from mri.parallel_mri.extract_sensitivity_maps import \
     gridded_inverse_fourier_transform_stack
 import pysap
@@ -43,7 +44,8 @@ sampling_z = np.random.randint(2, size=image.shape[2])  # random sampling
 sampling_z[22: 42] = 1
 Nz = sampling_z.sum()  # Number of acquired plane
 
-z_locations = np.repeat(convert_mask_to_locations(sampling_z),mask_radial.shape[0])
+z_locations = np.repeat(convert_mask_to_locations(sampling_z),
+                        mask_radial.shape[0])
 z_locations = z_locations[:, np.newaxis]
 
 kspace_loc = np.hstack([np.tile(mask_radial.data, (Nz, 1)),
@@ -75,7 +77,9 @@ kspace_obs = fourier_op.op(image.data)
 grid_space = [np.linspace(-0.5, 0.5, num=img_shape)
               for img_shape in image.shape[:-1]]
 grid = np.meshgrid(*tuple(grid_space))
-kspace_plane_loc, z_sample_loc, sort_pos, idx_mask_z = get_stacks_fourier(kspace_loc, image.shape)
+kspace_plane_loc, z_sample_loc, sort_pos, idx_mask_z = get_stacks_fourier(
+    kspace_loc,
+    image.shape)
 grid_soln = gridded_inverse_fourier_transform_stack(
     kspace_data_sorted=kspace_obs[sort_pos],
     kspace_plane_loc=kspace_plane_loc,
