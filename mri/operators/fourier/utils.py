@@ -280,8 +280,11 @@ def get_stacks_fourier(kspace_loc, shape):
     full_stack_loc = convert_mask_to_locations(np.ones(shape[2]))[:, 0]
     sampled_stack_loc = np.unique(kspace_loc[:, 2])
 
-    idx_mask_z = np.asarray([np.where(x == full_stack_loc)[0][0] for
-                             x in sampled_stack_loc])
+    try:
+        idx_mask_z = np.asarray([np.where(x == full_stack_loc)[0][0] for
+                                 x in sampled_stack_loc])
+    except IndexError:
+        raise ValueError('The input must be a stack of 2D k-Space data')
 
     first_stack_len = np.size(np.where(kspace_loc[:, 2] ==
                                        np.min(kspace_loc[:, 2])))
@@ -293,6 +296,7 @@ def get_stacks_fourier(kspace_loc, shape):
                                               first_stack_len),
                                     (acq_num_slices,
                                      first_stack_len))
+
     if np.mod(len(kspace_loc), first_stack_len) \
             or not np.all(stacked[:, :, 0:2] == stacked[0, :, 0:2]) \
             or not np.all(stacked[:, :, 2] == z_expected_stacked):

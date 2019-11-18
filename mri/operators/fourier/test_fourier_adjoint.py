@@ -233,7 +233,19 @@ class TestAdjointOperatorFourierTransform(unittest.TestCase):
 
     def test_stack_3D_error(self):
         np.testing.assert_raises(ValueError,
-                                 get_stacks_fourier, np.random.randn(12, 3))
+                                 get_stacks_fourier, np.random.randn(12, 3),
+                                 (self.N, self.N, self.N))
+        # Generate random mask along z
+        sampling_z = np.random.randint(2, size=self.N)
+        _mask3D = np.zeros((self.N, self.N, self.N))
+        for idx, acq_z in enumerate(sampling_z):
+            _mask3D[:, :, idx] = np.random.randint(
+                2,
+                size=(self.N, self.N)) * acq_z
+        sampling = convert_mask_to_locations(_mask3D)
+        np.testing.assert_raises(ValueError,
+                                 get_stacks_fourier, sampling,
+                                 (self.N, self.N, self.N))
 
 
 if __name__ == "__main__":
