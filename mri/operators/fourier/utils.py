@@ -245,7 +245,7 @@ def generate_operators(data, wavelet_name, samples, mu=1e-06, nb_scales=4,
     return gradient_op, linear_op, prox_op, cost_op
 
 
-def get_stacks_fourier(kspace_loc):
+def get_stacks_fourier(kspace_loc, shape):
     """Function that splits an incoming 3D stacked k-space samples
     into a 2D non-Cartesian plane and the vector containing the z k-space
     values of all the plane and converts to stacks of 2D. This function also
@@ -257,7 +257,8 @@ def get_stacks_fourier(kspace_loc):
     ----------
     ksapce_plane_loc: np.ndarray
         the mask samples in the 3D Fourier domain.
-
+    shape: tuple
+        Reconstructed volume shape
     Returns
     ----------
     ksapce_plane_loc: np.ndarray
@@ -266,15 +267,26 @@ def get_stacks_fourier(kspace_loc):
         A 1D array of z-sample locations
     sort_pos: np.ndarray
         The sorting positions for opertor and inverse for incoming data
+    idx_mask_z: np.ndarray
+        contains the indices of the acquired Fourier plane
     """
     # Sort the incoming data based on Z, Y then X coordinates
     # This is done for easier stacking
     sort_pos = np.lexsort(tuple(kspace_loc[:, i]
                                 for i in np.arange(3)))
     kspace_loc = kspace_loc[sort_pos]
-    first_stack_len = np.size(np.where(
-        kspace_loc[:, 2] == np.min(kspace_loc[:, 2])))
+
+    # Find the mask used to sample stacks in z direction
+    full_stack_loc = convert_mask_to_locations(np.ones(shape[2]))[:, 0]
+    sampled_stack_loc = np.unique(kspace_loc[:, 2])
+
+    idx_mask_z = np.asarray([np.where(x == full_stack_loc)[0][0] for
+                                x in sampled_stack_loc])
+
+    first_stack_len = np.size(np.where(kspace_loc[:, 2] ==
+                                       np.min(kspace_loc[:, 2])))
     acq_num_slices = int(len(kspace_loc) / first_stack_len)
+
     stacked = np.reshape(kspace_loc, (acq_num_slices,
                                       first_stack_len, 3))
     z_expected_stacked = np.reshape(np.repeat(stacked[:, 0, 2],
@@ -288,4 +300,4 @@ def get_stacks_fourier(kspace_loc):
     ksapce_plane_loc = stacked[0, :, 0:2]
     z_sample_loc = stacked[:, 0, 2]
     z_sample_loc = z_sample_loc[:, np.newaxis]
-    return ksapce_plane_loc, z_sample_loc, sort_pos
+    return ksapce_plane_loc, z_sample_loc, sort_pos, idx_mask_z
