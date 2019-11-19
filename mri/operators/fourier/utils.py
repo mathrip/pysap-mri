@@ -255,20 +255,20 @@ def get_stacks_fourier(kspace_loc, shape):
 
     Parameters
     ----------
-    ksapce_plane_loc: np.ndarray
+    kspace_plane_loc: np.ndarray
         the mask samples in the 3D Fourier domain.
     shape: tuple
         Reconstructed volume shape
     Returns
     ----------
-    ksapce_plane_loc: np.ndarray
+    kspace_plane_loc: np.ndarray
         A 2D array of samples which when stacked gives the 3D samples
     z_sample_loc: np.ndarray
         A 1D array of z-sample locations
     sort_pos: np.ndarray
         The sorting positions for opertor and inverse for incoming data
     idx_mask_z: np.ndarray
-        contains the indices of the acquired Fourier plane
+        contains the indices of the acquired Fourier planes
     """
     # Sort the incoming data based on Z, Y then X coordinates
     # This is done for easier stacking
@@ -301,7 +301,7 @@ def get_stacks_fourier(kspace_loc, shape):
             or not np.all(stacked[:, :, 0:2] == stacked[0, :, 0:2]) \
             or not np.all(stacked[:, :, 2] == z_expected_stacked):
         raise ValueError('The input must be a stack of 2D k-Space data')
-    ksapce_plane_loc = stacked[0, :, 0:2]
+    kspace_plane_loc = stacked[0, :, 0:2]
     z_sample_loc = stacked[:, 0, 2]
     z_sample_loc = z_sample_loc[:, np.newaxis]
-    return ksapce_plane_loc, z_sample_loc, sort_pos, idx_mask_z
+    return kspace_plane_loc, z_sample_loc, sort_pos, idx_mask_z
