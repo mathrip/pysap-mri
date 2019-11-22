@@ -134,7 +134,7 @@ def gridded_inverse_fourier_transform_stack(kspace_data_sorted,
             kspace_data_sorted[i*stack_len:(i+1)*stack_len],
             grid,
             method=method,
-            fill_value=0
+            fill_value=0,
         )
 
     # Transpose every image in each slice
