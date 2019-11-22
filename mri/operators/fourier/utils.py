@@ -255,9 +255,8 @@ def get_stacks_fourier(kspace_loc, shape):
 
     Parameters
     ----------
-    kspace_plane_loc: np.ndarray
+    kspace_loc: np.ndarray
         the mask samples in the 3D Fourier domain
-        possibility to mask entire planes (sampling in z direction)
     shape: tuple
         Reconstructed volume shape
     Returns
