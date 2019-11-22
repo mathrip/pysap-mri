@@ -248,7 +248,7 @@ def generate_operators(data, wavelet_name, samples, mu=1e-06, nb_scales=4,
 def get_stacks_fourier(kspace_loc, shape):
     """Function that splits an incoming 3D stacked k-space samples
     into a 2D non-Cartesian plane and the vector containing the z k-space
-    values of all the plane and converts to stacks of 2D. This function also
+    values of the stacks acquiered and converts to stacks of 2D. This function also
     checks for any issues of the incoming k-space pattern and if the stack
     property is not satisfied.
     Stack Property: The k-space locations originate from a stack of 2D samples.
@@ -256,7 +256,8 @@ def get_stacks_fourier(kspace_loc, shape):
     Parameters
     ----------
     kspace_plane_loc: np.ndarray
-        the mask samples in the 3D Fourier domain.
+        the mask samples in the 3D Fourier domain
+        possibility to mask entire planes (sampling in z direction)
     shape: tuple
         Reconstructed volume shape
     Returns
@@ -268,7 +269,7 @@ def get_stacks_fourier(kspace_loc, shape):
     sort_pos: np.ndarray
         The sorting positions for opertor and inverse for incoming data
     idx_mask_z: np.ndarray
-        contains the indices of the acquired Fourier planes
+        contains the indices of the acquired Fourier planes (z direction)
     """
     # Sort the incoming data based on Z, Y then X coordinates
     # This is done for easier stacking
@@ -277,19 +278,19 @@ def get_stacks_fourier(kspace_loc, shape):
     kspace_loc = kspace_loc[sort_pos]
 
     # Find the mask used to sample stacks in z direction
-    full_stack_loc = convert_mask_to_locations(np.ones(shape[2]))[:, 0]
-    sampled_stack_loc = np.unique(kspace_loc[:, 2])
+    full_stack_z_loc = convert_mask_to_locations(np.ones(shape[2]))[:, 0]
+    sampled_stack_z_loc = np.unique(kspace_loc[:, 2])
 
     try:
-        idx_mask_z = np.asarray([np.where(x == full_stack_loc)[0][0] for
-                                 x in sampled_stack_loc])
+        idx_mask_z = np.asarray([
+            np.where(x == full_stack_z_loc)[0][0] for x in sampled_stack_z_loc
+        ])
     except IndexError:
         raise ValueError('The input must be a stack of 2D k-Space data')
 
-    first_stack_len = np.size(np.where(kspace_loc[:, 2] ==
-                                       np.min(kspace_loc[:, 2])))
+    first_stack_len = np.size(np.where(
+        kspace_loc[:, 2] == np.min(kspace_loc[:, 2])))
     acq_num_slices = int(len(kspace_loc) / first_stack_len)
-
     stacked = np.reshape(kspace_loc, (acq_num_slices,
                                       first_stack_len, 3))
     z_expected_stacked = np.reshape(np.repeat(stacked[:, 0, 2],

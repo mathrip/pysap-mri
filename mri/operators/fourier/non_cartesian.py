@@ -502,12 +502,12 @@ class Stacked3DNFFT(OperatorBase):
             axes=2)
 
         stacked_kspace = np.asarray(
-            [self.plane_fourier_operator.op(fft_along_z_axis[:, :, slice])
-             for slice in range(self.num_slices)])
+            [self.plane_fourier_operator.op(fft_along_z_axis[:, :, stack])
+             for stack in range(self.num_slices)])
         stacked_kspace_sampled = np.zeros((self.acq_num_slices,
                                            self.stack_len),
                                           dtype=data.dtype)
-        stacked_kspace_sampled = stacked_kspace[self.idx_mask_z, :]
+        stacked_kspace_sampled = stacked_kspace[self.idx_mask_z]
 
         stacked_kspace_sampled = np.reshape(
             stacked_kspace_sampled,
