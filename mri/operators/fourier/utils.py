@@ -245,7 +245,7 @@ def generate_operators(data, wavelet_name, samples, mu=1e-06, nb_scales=4,
     return gradient_op, linear_op, prox_op, cost_op
 
 
-def get_stacks_fourier(kspace_loc, shape):
+def get_stacks_fourier(kspace_loc, volume_shape):
     """Function that splits an incoming 3D stacked k-space samples
     into a 2D non-Cartesian plane and the vector containing the z k-space
     values of the stacks acquiered and converts to stacks of 2D.
@@ -256,8 +256,9 @@ def get_stacks_fourier(kspace_loc, shape):
     Parameters
     ----------
     kspace_loc: np.ndarray
-        the mask samples in the 3D Fourier domain
-    shape: tuple
+        Acquired 3D k-space locations : stacks of same non-Cartesian samples,
+        while Cartesian under-sampling on the stacks direction.
+    volume_shape: tuple
         Reconstructed volume shape
     Returns
     ----------
@@ -277,7 +278,8 @@ def get_stacks_fourier(kspace_loc, shape):
     kspace_loc = kspace_loc[sort_pos]
 
     # Find the mask used to sample stacks in z direction
-    full_stack_z_loc = convert_mask_to_locations(np.ones(shape[2]))[:, 0]
+    full_stack_z_loc = \
+        convert_mask_to_locations(np.ones(volume_shape[2]))[:, 0]
     sampled_stack_z_loc = np.unique(kspace_loc[:, 2])
 
     try:
@@ -296,7 +298,6 @@ def get_stacks_fourier(kspace_loc, shape):
                                               first_stack_len),
                                     (acq_num_slices,
                                      first_stack_len))
-
     if np.mod(len(kspace_loc), first_stack_len) \
             or not np.all(stacked[:, :, 0:2] == stacked[0, :, 0:2]) \
             or not np.all(stacked[:, :, 2] == z_expected_stacked):

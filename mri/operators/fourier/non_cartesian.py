@@ -482,12 +482,12 @@ class Stacked3DNFFT(OperatorBase):
         """
         self.num_slices = shape[2]
         self.shape = shape
-        (kspace_plane_loc,
-         self.z_sample_loc,
-         self.sort_pos,
-         self.idx_mask_z) = get_stacks_fourier(
+        (kspace_plane_loc, self.z_sample_loc, self.sort_pos, self.idx_mask_z) \
+            = \
+            get_stacks_fourier(
             kspace_loc,
-            self.shape)
+            self.shape,
+            )
         self.acq_num_slices = len(self.z_sample_loc)
         self.stack_len = len(kspace_plane_loc)
         self.plane_fourier_operator = \
@@ -500,15 +500,9 @@ class Stacked3DNFFT(OperatorBase):
             np.fft.ifftshift(data, axes=2),
             norm="ortho"),
             axes=2)
-
-        stacked_kspace = np.asarray(
+        stacked_kspace_sampled = np.asarray(
             [self.plane_fourier_operator.op(fft_along_z_axis[:, :, stack])
-             for stack in range(self.num_slices)])
-        stacked_kspace_sampled = np.zeros((self.acq_num_slices,
-                                           self.stack_len),
-                                          dtype=data.dtype)
-        stacked_kspace_sampled = stacked_kspace[self.idx_mask_z]
-
+             for stack in self.idx_mask_z])
         stacked_kspace_sampled = np.reshape(
             stacked_kspace_sampled,
             self.acq_num_slices * self.stack_len)
@@ -537,13 +531,12 @@ class Stacked3DNFFT(OperatorBase):
             coeff = [self._op(data[i])
                      for i in range(self.n_coils)]
         coeff = np.asarray(coeff)
-
         return coeff
 
     def _adj_op(self, coeff):
         coeff = coeff[self.sort_pos]
         stacks = np.reshape(coeff, (self.acq_num_slices, self.stack_len))
-        # Receive First Fourier transformed data (per plane) in Nz x N x N
+        # Receive First Fourier transformed data (per plane) in N x N x Nz
         adj_fft_along_z_axis = np.zeros((*self.plane_fourier_operator.shape,
                                          self.num_slices),
                                         dtype=coeff.dtype)
