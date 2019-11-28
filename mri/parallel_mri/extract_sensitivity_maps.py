@@ -126,7 +126,7 @@ def gridded_inverse_fourier_transform_stack(kspace_data_sorted,
     np.ndarray
         The gridded inverse fourier transform of given kspace data
     """
-    gridded_kspace = np.zeros(shape)
+    gridded_kspace = np.zeros(shape, dtype=kspace_data_sorted.dtype)
     stack_len = len(kspace_plane_loc)
     for i, idx_z in enumerate(idx_mask_z):
         gridded_kspace[:, :, idx_z] = griddata(
