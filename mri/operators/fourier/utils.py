@@ -278,8 +278,9 @@ def get_stacks_fourier(kspace_loc, volume_shape):
     kspace_loc = kspace_loc[sort_pos]
 
     # Find the mask used to sample stacks in z direction
-    full_stack_z_loc = \
-        convert_mask_to_locations(np.ones(volume_shape[2]))[:, 0]
+    full_stack_z_loc = convert_mask_to_locations(
+        np.ones(volume_shape[2]),
+    )[:, 0]
     sampled_stack_z_loc = np.unique(kspace_loc[:, 2])
 
     try:

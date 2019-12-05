@@ -98,7 +98,7 @@ def gridded_inverse_fourier_transform_stack(kspace_data_sorted,
                                             kspace_plane_loc,
                                             idx_mask_z,
                                             grid,
-                                            shape,
+                                            volume_shape,
                                             method):
     """
     This function calculates the gridded Inverse fourier transform
@@ -115,8 +115,9 @@ def gridded_inverse_fourier_transform_stack(kspace_data_sorted,
         contains the indices of the acquired Fourier plane. Extracted using
         get_stacks_fourier function
     grid: tuple
-        The Gridded matrix for which you want to calculate k_space Smaps
-    shape: tuple
+        The Gridded matrix for which you want to calculate k_space Smaps.
+        Should be given as a tuple of ndarray
+    volume_shape: tuple
         Reconstructed volume shape
     method: {'linear', 'nearest', 'cubic'}, optional
         Method of interpolation for more details see scipy.interpolate.griddata
@@ -126,7 +127,7 @@ def gridded_inverse_fourier_transform_stack(kspace_data_sorted,
     np.ndarray
         The gridded inverse fourier transform of given kspace data
     """
-    gridded_kspace = np.zeros(shape, dtype=kspace_data_sorted.dtype)
+    gridded_kspace = np.zeros(volume_shape, dtype=kspace_data_sorted.dtype)
     stack_len = len(kspace_plane_loc)
     for i, idx_z in enumerate(idx_mask_z):
         gridded_kspace[:, :, idx_z] = griddata(

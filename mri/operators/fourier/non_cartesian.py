@@ -509,6 +509,7 @@ class Stacked3DNFFT(OperatorBase):
         # Unsort the Coefficients
         inv_idx = np.zeros_like(self.sort_pos)
         inv_idx[self.sort_pos] = np.arange(len(self.sort_pos))
+        # Return kspace unsorted and normalised by the ratio of slices acquired
         return stacked_kspace_sampled[inv_idx] * \
             np.sqrt(self.num_slices / self.acq_num_slices)
 

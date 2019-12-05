@@ -85,7 +85,7 @@ grid_soln = gridded_inverse_fourier_transform_stack(
     kspace_plane_loc=kspace_plane_loc,
     idx_mask_z=idx_mask_z,
     grid=tuple(grid),
-    shape=image.shape,
+    volume_shape=image.shape,
     method='linear')
 
 image_rec0 = pysap.Image(data=grid_soln)
