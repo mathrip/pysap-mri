@@ -70,21 +70,21 @@ class NFFT:
 
         Exemple
         -------
-        >>> import numpy as np
-        >>> from pysap.data import get_sample_data
-        >>> from mri.numerics.fourier import NFFT, FFT
-        >>> from mri.reconstruct.utils import \
+        import numpy as np
+        from pysap.data import get_sample_data
+        from mri.numerics.fourier import NFFT, FFT
+        from mri.reconstruct.utils import \
         convert_mask_to_locations
 
-        >>> I = get_sample_data("2d-pmri").data.astype("complex128")
-        >>> I = I[0]
-        >>> samples = convert_mask_to_locations(np.ones(I.shape))
-        >>> fourier_op = NFFT(samples=samples, shape=I.shape)
-        >>> cartesian_fourier_op = FFT(samples=samples, shape=I.shape)
-        >>> x_nfft = fourier_op.op(I)
-        >>> x_fft = np.fft.ifftshift(cartesian_fourier_op.op(
+        I = get_sample_data("2d-pmri").data.astype("complex128")
+        I = I[0]
+        samples = convert_mask_to_locations(np.ones(I.shape))
+        fourier_op = NFFT(samples=samples, shape=I.shape)
+        artesian_fourier_op = FFT(samples=samples, shape=I.shape)
+        x_nfft = fourier_op.op(I)
+        x_fft = np.fft.ifftshift(cartesian_fourier_op.op(
             np.fft.fftshift(I))).flatten()
-        >>> np.mean(np.abs(x_fft / x_nfft))
+        np.mean(np.abs(x_fft / x_nfft))
         1.000000000000005
         """
         if samples.shape[-1] != len(shape):
@@ -481,6 +481,7 @@ class Stacked3DNFFT(OperatorBase):
             receiver coils acquisition
         """
         self.num_slices = shape[2]
+        self.samples = kspace_loc
         self.shape = shape
         (kspace_plane_loc, self.z_sample_loc, self.sort_pos, self.idx_mask_z) \
             = \
@@ -491,7 +492,7 @@ class Stacked3DNFFT(OperatorBase):
         self.acq_num_slices = len(self.z_sample_loc)
         self.stack_len = len(kspace_plane_loc)
         self.plane_fourier_operator = \
-            NonCartesianFFT(samples=kspace_plane_loc, shape=shape[0:2],
+            NonCartesianFFT(samples=kspace_plane_loc, shape=tuple(shape[0:2]),
                             implementation=implementation)
         self.n_coils = n_coils
 

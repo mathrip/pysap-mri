@@ -145,12 +145,18 @@ def get_stacks_fourier(kspace_loc, volume_shape):
     # Find the mask used to sample stacks in z direction
     full_stack_z_loc = convert_mask_to_locations(
         np.ones(volume_shape[2]),
-    )[:, 0]
-    sampled_stack_z_loc = np.unique(kspace_loc[:, 2])
+    )[:, 0].astype('float16')
+    sampled_stack_z_loc = np.unique(kspace_loc[:, 2]).astype('float16')
+    # import ipdb;
+    # ipdb.set_trace()
 
+    # try:
+    #     idx_mask_z = np.asarray([
+    #         np.where(x == full_stack_z_loc)[0][0] for x in sampled_stack_z_loc
+    #     ])
     try:
         idx_mask_z = np.asarray([
-            np.where(x == full_stack_z_loc)[0][0] for x in sampled_stack_z_loc
+            np.where(np.isclose(x,full_stack_z_loc))[0][0] for x in sampled_stack_z_loc
         ])
     except IndexError:
         raise ValueError('The input must be a stack of 2D k-Space data')
