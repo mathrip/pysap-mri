@@ -25,24 +25,27 @@ class SelfCalibrationReconstructor(ReconstructorBase):
     The coil sensitivity is estimated from a small portion of the  k-space
     center and used to reconstruct the complex image.
 
-    For the Analysis case, finds the solution for x of:
-        (1/2) * sum(||F Sl x - yl||^2_2, n_coils) + mu * H( W x )
+    Notes
+    -----
+        For the Analysis case, finds the solution for x of:
+        ..math:: (1/2) * sum(||F Sl x - yl||^2_2, n_coils) + mu * H( W x )
 
-    For the Synthesis case, finds the solution of:
-        (1/2) * sum(||F Sl Wt alpha - yl||^2_2, n_coils) + mu * H (alpha)
+        For the Synthesis case, finds the solution of:
+        ..math:: (1/2) * sum(||F Sl Wt alpha - yl||^2_2, n_coils) +
+        mu * H (alpha)
 
-    The sensitivity information is taken to be the low-resolution of the image
-    extractes from the k-space portion given in the parameter
+        The sensitivity information is taken to be the low-resolution of
+        the image extracts from the k-space portion given in the parameter
 
     Parameters
     ----------
     fourier_op: object of class FFT, NonCartesianFFT or Stacked3DNFFT in
-                mri.operators
+    mri.operators
         Defines the fourier operator F in the above equation.
     linear_op: object, (optional, default None)
         Defines the linear sparsifying operator W. This must operate on x and
         have 2 functions, op(x) and adj_op(coeff) which implements the
-        operator and adjoint opertaor. For wavelets, this can be object of
+        operator and adjoint operator. For wavelets, this can be object of
         class WaveletN or WaveletUD2 from mri.operators .
         If None, sym8 wavelet with nb_scale=3 is chosen.
     gradient_formulation: str between 'analysis' or 'synthesis',
@@ -52,34 +55,44 @@ class SelfCalibrationReconstructor(ReconstructorBase):
         int or tuple indicating the k-space portion used to estimate the coil
         sensitivity information.
         if int, will be evaluated to (0.1,)*nb_dim of the image
+    Smaps: np.ndarray (optional, default None)
+        for gradient initialization:
+            Please refer to mri.operators.gradient.base for information.
+
+        Sensivity maps used to initialize the gradient operator. If set to
+        None, the maps will have to be recomputed once when calling the
+        reconstruct method. The shape should correspond to the shape of
+        the expected volume.
     smaps_extraction_mode: string 'FFT' | 'NFFT' | 'Stack' | 'gridding' default
         Defines the mode in which we would want to interpolate to extract the
-        sensitivity information,
+        sensitivity information when recomputing the sensitivity maps.
         NOTE: FFT should be considered only if the input has
         been sampled on the grid
     smaps_gridding_method: string 'linear' (default) | 'cubic' | 'nearest'
         For gridding mode, it defines the way interpolation must be done used
-        by the sensitivity extraction method.
+        by the sensitivity extraction method when recomputing
+        the sensitivity maps.
     n_jobs: int, default 1
-        The number of CPUs used to accelerate the reconstruction
-    verbose: int, default 0
-        Verbosity level.
+        The number of CPUs used to accelerate the reconstruction.
+    verbose: int, optional default 0
+        Verbosity levels
             1 => Print basic debug information
             5 => Print all initialization information
             20 => Calculate cost at the end of each iteration.
-                NOTE : This is computationally intensive.
             30 => Print the debug information of operators if defined by class
-    **kwargs : Extra keyword arguments
+            NOTE - High verbosity (>20) levels are computationally intensive.
+    **kwargs: Extra keyword arguments
         for gradient initialization:
-            Please refer to mri.operators.gradient.base for information
+            Please refer to mri.operators.gradient.base for information.
         regularizer_op: operator, (optional default None)
             Defines the regularization operator for the regularization
             function H. If None, the  regularization chosen is Identity and
             the optimization turns to gradient descent.
     """
+
     def __init__(self, fourier_op, linear_op=None,
                  gradient_formulation="synthesis", kspace_portion=0.1,
-                 smaps_extraction_mode='gridding',
+                 Smaps=None, smaps_extraction_mode='gridding',
                  smaps_gridding_method='linear', n_jobs=1, verbose=0,
                  **kwargs):
         if linear_op is None:
@@ -91,6 +104,9 @@ class SelfCalibrationReconstructor(ReconstructorBase):
                 n_coils=1,
                 verbose=bool(verbose >= 30),
             )
+        # Add Smaps to kwargs if necessary for gradient initialization
+        if (Smaps is not None):
+            kwargs["Smaps"] = Smaps
         # Ensure that we are in right multichannel config
         if linear_op.n_coils != 1:
             raise ValueError("The value of n_coils for linear operation must "
@@ -104,7 +120,7 @@ class SelfCalibrationReconstructor(ReconstructorBase):
             linear_op=linear_op,
             gradient_formulation=gradient_formulation,
             grad_class=grad_class,
-            init_gradient_op=False,
+            init_gradient_op=(Smaps is not None),
             verbose=verbose,
             **kwargs,
         )
@@ -121,9 +137,33 @@ class SelfCalibrationReconstructor(ReconstructorBase):
                              " the input dimension")
         self.n_jobs = n_jobs
 
+    def get_smaps(self):
+        """ This method returns the sensitivity maps.
+
+        Returns
+        -------
+        np.ndarray, None
+            The sensitivity maps when given or already computed, or None.
+        """
+        return self.extra_grad_args.get("Smaps")
+
+    def set_smaps(self, Smaps):
+        """ This method sets the sensitivity maps and re-initializes
+        the gradient operator accordingly.
+
+        Parameters
+        ----------
+        Smaps: np.ndarray
+            for gradient initialization:
+                Please refer to mri.operators.gradient.base for information
+        """
+        self.extra_grad_args["Smaps"] = Smaps
+        self.initialize_gradient_op(**self.extra_grad_args)
+
     def reconstruct(self, kspace_data, optimization_alg='pogm', x_init=None,
                     num_iterations=100, recompute_smaps=True, **kwargs):
         """ This method calculates operator transform.
+
         Parameters
         ----------
         kspace_data: np.ndarray
@@ -165,8 +205,7 @@ class SelfCalibrationReconstructor(ReconstructorBase):
                 method=self.smaps_gridding_method,
                 n_cpu=self.n_jobs
             )
-            self.extra_grad_args['Smaps'] = Smaps
-            self.initialize_gradient_op(**self.extra_grad_args)
+            self.set_smaps(Smaps)
         # Start Reconstruction
         super(SelfCalibrationReconstructor, self).reconstruct(
             kspace_data,
