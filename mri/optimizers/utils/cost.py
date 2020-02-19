@@ -22,7 +22,7 @@ class DualGapCost(costObj):
     """ Define the dual-gap cost function.
     """
     def __init__(self, linear_op, initial_cost=1e6, tolerance=1e-4,
-                 cost_interval=1, test_range=4, verbose=False,
+                 cost_interval=None, test_range=4, verbose=False,
                  plot_output=None):
         """ Initialize the 'DualGapCost' class.
         Parameters
@@ -74,7 +74,7 @@ class GenericCost(costObj):
     gradient operator and the cost function of the proximity operator.
     """
     def __init__(self, gradient_op, prox_op, initial_cost=1e6,
-                 tolerance=1e-4, cost_interval=1, test_range=4, verbose=False,
+                 tolerance=1e-4, cost_interval=None, test_range=4, verbose=False,
                  plot_output=None):
         """ Initialize the 'Cost' class.
         Parameters

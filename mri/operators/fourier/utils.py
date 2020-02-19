@@ -165,10 +165,11 @@ def get_stacks_fourier(kspace_loc, volume_shape):
                                     (acq_num_slices,
                                      first_stack_len))
     if np.mod(len(kspace_loc), first_stack_len) \
-            or not np.all(stacked[:, :, 0:2] == stacked[0, :, 0:2]) \
+           or not np.all(stacked[:, :, 0:2] == stacked[0, :, 0:2]) \
             or not np.all(stacked[:, :, 2] == z_expected_stacked):
         raise ValueError('The input must be a stack of 2D k-Space data')
     kspace_plane_loc = stacked[0, :, 0:2]
+    # kspace_plane_loc = stacked[:, :, 0:2]
     z_sample_loc = stacked[:, 0, 2]
     z_sample_loc = z_sample_loc[:, np.newaxis]
     return kspace_plane_loc, z_sample_loc, sort_pos, idx_mask_z
@@ -242,7 +243,8 @@ def gridded_inverse_fourier_transform_stack(kspace_data_sorted,
         The gridded inverse fourier transform of given kspace data
     """
     gridded_kspace = np.zeros(volume_shape, dtype=kspace_data_sorted.dtype)
-    stack_len = len(kspace_plane_loc)
+    # stack_len = len(kspace_plane_loc)
+    stack_len = kspace_plane_loc.shape[1]
     for i, idx_z in enumerate(idx_mask_z):
         gridded_kspace[:, :, idx_z] = griddata(
             kspace_plane_loc,
